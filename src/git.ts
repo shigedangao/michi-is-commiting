@@ -4,7 +4,8 @@ import {
   Cred,
   Oid,
   Reference,
-  Signature
+  Signature,
+  Remote
 } from 'nodegit'
 
 // Constant
@@ -32,7 +33,7 @@ class Git {
   async pull() {
     await this.handle.fetchAll({
       callbacks: {
-        credentials: (userName: string) => {
+        credentials: (_: string, userName: string) => {
           return Cred.sshKeyFromAgent(userName)
         },
         certificateCheck: () => 0
@@ -63,6 +64,18 @@ class Git {
       'test commit',
       this.oid,
       [lastCommit]
+    )
+  }
+
+  async push(commit: Oid) {
+    let remote = await Remote.create(this.handle, 'origin', REPOSITORY)
+    return remote.push(
+      ["refs/heads/master:refs/heads/master"],
+      {
+        callbacks: {
+          credentials: (_: string, userName: string) => Cred.sshKeyFromAgent(userName)
+        }
+      }
     )
   }
 }
