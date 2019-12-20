@@ -22,6 +22,8 @@
     "test:watch": "jest --watch --notify --notifyMode=change --coverage"
   },
   "dependencies": {
+    "@types/nodegit": "^0.24.13",
+    "nodegit": "^0.26.3",
     "probot": "^9.5.3"
   },
   "devDependencies": {
