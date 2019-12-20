@@ -1,36 +1,45 @@
-import { Application } from 'probot' // eslint-disable-line no-unused-vars
+import { Application } from 'probot'
+import { parsePayload } from './command'
+import { getInstance } from './git'
+import { runKustomize } from './kustomize'
+import chalk from 'chalk'
 
+// get the instance of the git module
+const git = getInstance()
+
+// console.log reference
+const log = console.log
+
+/**
+ * Init Repository
+ */
+function initRepository() {
+  git.setHandle()
+    .then(() => git.pull())
+    .then(() => log(chalk.blue('git: repo pull')))
+    .catch(err => log(err))
+}
+
+// Run the initialization of the repository
+initRepository()
+
+// Command supported
+// /michi-commit staging=demo1 hummingbird-sf <image tag>
+// /michi-commit production hummingbird-sf <image-tag>
 export = (app: Application) => {
-  console.log('ta mere');
-  // app.on('issues.opened', async (context) => {
-  //   const issueComment = context.issue({ body: 'Thanks for opening this issue!' })
-  //   await context.github.issues.createComment(issueComment)
-  // })
+  app.on('issue_comment', async (context) => {
+    // retrieve the latest commit before doing anything
+    await git.pull()
 
-  // app.on('pull_request', async (context) => {
-  //   console.log('loool');
-  //   console.log(context);
+    // parse the payload and commit
+    parsePayload(context.payload.comment.body)
+      .then(cmd => runKustomize(cmd))
+      .then(() => git.addAll())
+      .then(() => git.commit())
+      .then(() => git.push())
+      .then(() => log(chalk.green(`commit done`)))
+      .catch(err => console.log(err))
 
-  //   return Promise.resolve();
-  // })
-
-  // app.on('pull_request.labeled', async (context) => {
-  //   console.log('loool');
-  //   console.log('allez merde');
-
-  //   return Promise.resolve();
-  // });
-
-  app.on("*", async (context) => {
-    console.log('hey')
-    console.log(context.event)
-    console.log(context.payload.comment.body)
-
-    return Promise.resolve();
+    return Promise.resolve()
   })
-  // For more information on building apps:
-  // https://probot.github.io/docs/
-
-  // To get your app running against GitHub, see:
-  // https://probot.github.io/docs/development/
 }

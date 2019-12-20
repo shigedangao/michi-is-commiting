@@ -22,7 +22,10 @@
     "test:watch": "jest --watch --notify --notifyMode=change --coverage"
   },
   "dependencies": {
+    "@types/fs-extra": "^8.0.1",
     "@types/nodegit": "^0.24.13",
+    "chalk": "^3.0.0",
+    "fs-extra": "^8.1.0",
     "nodegit": "^0.26.3",
     "probot": "^9.5.3"
   },

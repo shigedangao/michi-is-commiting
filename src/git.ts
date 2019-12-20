@@ -5,33 +5,57 @@ import {
   Oid,
   Reference,
   Signature,
-  Remote
 } from 'nodegit'
+import fs from 'fs-extra'
+import chalk from 'chalk'
 
 // Constant
-const REPOSITORY = ''
+const REPOSITORY = 'repo'
+const BRANCH = 'origin/master'
+const NEEDLE = 'HEAD'
 const REPOSITORY_FOLDER = 'charts'
 
+// instance
+let instance: Git
+
+/**
+ * Git
+ *    Singleton which handle git operations on the chart repository
+ */
 class Git {
-  handle: Repository
-  oid: Oid
+  // Repository handler
+  handle?: Repository
+  // Oid is a full | partial hash value that is used to recognized git objects
+  oid?: Oid
 
-  constructor() {
-    this.handle = new Repository()
-    this.oid = new Oid()
+  /**
+   * Set Handle
+   * 
+   * @return Promise
+   */
+  async setHandle(): Promise<any> {
+    await fs.remove(REPOSITORY_FOLDER)
+    const res = await Clone.clone(REPOSITORY, REPOSITORY_FOLDER, {
+      fetchOpts: {
+        callbacks: {
+          credentials: (_: string, username: string) => Cred.sshKeyFromAgent(username),
+          certificateCheck: () => 0
+        }
+      }
+    })
+
+    this.handle = res
+
+    return Promise.resolve()
   }
 
-  async setHandle() {
-    try {
-      let res = await Clone.clone(REPOSITORY, REPOSITORY_FOLDER)
-      this.handle = res
-    } catch (e) {
-      throw new Error(e)
-    }
-  }
-
-  async pull() {
-    await this.handle.fetchAll({
+  /**
+   * Pull
+   * 
+   * @return Promise<void>
+   */
+  async pull(): Promise<void> {
+    await this.handle!.fetchAll({
       callbacks: {
         credentials: (_: string, userName: string) => {
           return Cred.sshKeyFromAgent(userName)
@@ -39,43 +63,77 @@ class Git {
         certificateCheck: () => 0
       }
     })
-    .then(() => this.handle.mergeBranches('master', 'origin/master'))
-    .finally(() => console.log('repo updated'))
+    .then(() => this.handle!.mergeBranches('master', BRANCH))
+    .finally(() => console.log(chalk.blue('Git: repo updated')))
+
+    return Promise.resolve()
   }
 
-  async addAll() {
-    let index = await this.handle.refreshIndex()
+  /**
+   * Add All
+   * 
+   * @return Promise<void>
+   */
+  async addAll(): Promise<void> {
+    const index = await this.handle!.refreshIndex()
     await index.addAll()
     await index.write()
     
     this.oid = await index.writeTree()
+
+    return Promise.resolve()
   }
 
-  async commit() {
-    const needle = await Reference.nameToId(this.handle, "HEAD")
-    const lastCommit = await this.handle.getCommit(needle)
+  /**
+   * Commit
+   * 
+   * @return Promise<void>
+   */
+  async commit(): Promise<void> {
+    const needle = await Reference.nameToId(this.handle!, NEEDLE)
+    const lastCommit = await this.handle!.getCommit(needle)
+    const author = Signature.now('zhuchishigedangao', 'zhuchidangao@gmail.com')
 
-    const author = Signature.now('Shigedangao', '<>')
-    
-    return this.handle.createCommit(
+    await this.handle!.createCommit(
       'HEAD',
       author,
       author,
       'test commit',
-      this.oid,
+      this.oid!,
       [lastCommit]
     )
+
+    return Promise.resolve()
   }
 
-  async push(commit: Oid) {
-    let remote = await Remote.create(this.handle, 'origin', REPOSITORY)
+  /**
+   * Push
+   * 
+   * @return Promise<number>
+   */
+  async push(): Promise<number> {
+    let remote = await this.handle!.getRemote('origin')
     return remote.push(
       ["refs/heads/master:refs/heads/master"],
       {
         callbacks: {
-          credentials: (_: string, userName: string) => Cred.sshKeyFromAgent(userName)
+          credentials: (_: string, userName: string) => Cred.sshKeyFromAgent(userName),
+          transferProgress: (progress: any) => console.log(chalk.greenBright(`progress: ${progress}`))
         }
       }
     )
   }
+}
+
+/**
+ * Get Instance
+ * 
+ * @return {Object} instance
+ */
+export const getInstance = (): Git => {
+  if (!instance) {
+    instance = new Git()
+  }
+
+  return instance
 }

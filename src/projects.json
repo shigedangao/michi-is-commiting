@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "staging": "eu.gcr.io/<project>",
+    "production": "eu.gcr.io/<project>/"
+  }
+}
