@@ -1,6 +1,15 @@
-# auto-commit
+# michi is commiting
 
-> A GitHub App built with [Probot](https://github.com/probot/probot) that an app to commit into the michi-charts
+Just a bot to run the command ```kustomize edit set image image:tag``` and commit to a repo which represent the infrastructure as code. 
+
+## infrastructure of code repo eg
+
+-- infra
+--- zaoshang
+----- base
+----- overlays
+------- preprod
+------- prod
 
 ## Setup
 
@@ -13,6 +22,20 @@ npm run build
 
 # Run the bot
 npm start
+```
+
+## Usage
+
+In a github pull request comment the pr with the following command
+
+```
+/michi-commit staging=<overlay name> <project name> <tag name>
+```
+
+example
+
+```
+/michi-commit staging=preprod zaoshang eb126c6
 ```
 
 ## Contributing
