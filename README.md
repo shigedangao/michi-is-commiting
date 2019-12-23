@@ -4,12 +4,14 @@ Just a bot to run the command ```kustomize edit set image image:tag``` and commi
 
 ## infrastructure of code repo eg
 
+```
 -- infra
 --- zaoshang
 ----- base
 ----- overlays
 ------- preprod
 ------- prod
+```
 
 ## Setup
 
